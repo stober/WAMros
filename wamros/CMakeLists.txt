@@ -1,8 +1,5 @@
 #WAMROS
 #Dang - EPFL
-#TODO: Should this deal with the different setups?
-#           Xenomai/RTAI  PCAN/PCI  etc
-#      Should this deal with building btclient?
 
 #Boilerplate-----------------------------------------
 cmake_minimum_required(VERSION 2.4.6)
@@ -18,13 +15,24 @@ set(CMAKE_VERBOSE_MAKEFILE true)
 #rosbuild_genmsg()
 #rosbuild_gensrv()
 
-#Link bt - maybe find with a system locate call?
-include_directories("/usr/local/include/btclient")
-link_directories("/usr/local/lib/btclient")
+# Use find_path to locate btclient include directory. Not that setting BTCLIENT_INC environment variable will also work.
+find_path(BTCLIENT_INC_DIR btwam.h ENV BTCLIENT_INC /usr/include /usr/local/include /usr/include/btclient /usr/local/include/btclient)
+message("BTCLIENT_INC_DIR: " ${BTCLIENT_INC_DIR})
+include_directories(${BTCLIENT_INC_DIR})
 
-#Link Xenomai - Likewise
-include_directories("/usr/xenomai/include")
-link_directories("/usr/xenomai/lib")
+# Similarly use find_path to find the btclient libraries to link against.
+find_path(BTCLIENT_LIB_DIR libbtwam.a ENV BTCLIENT_LIB /usr/lib /usr/local/lib /usr/lib/btclient /usr/local/lib/btclient)
+message("BTCLIENT_LIB_DIR: " ${BTCLIENT_LIB_DIR})
+link_directories(${BTCLIENT_LIB_DIR})
+
+#Fine Xenomai
+find_path(XENOMAI_INC_DIR xeno_config.h ENV XENOMAI_INC_DIR /usr/include /usr/local/include /usr/xenomai/include)
+message("XENOMAI_INC_DIR: " ${XENOMAI_INC_DIR})
+include_directories(${XENOMAI_INC_DIR})
+
+find_path(XENOMAI_LIB_DIR libxenomai.so ENV XENOMAI_LIB_DIR /usr/lib /usr/local/lib /usr/xenomai/lib)
+message("XENOMAI_LIB_DIR: " ${XENOMAI_LIB_DIR})
+link_directories(${XENOMAI_LIB_DIR})
 
 #Here's what we're making
 rosbuild_add_executable(wamros_node src/wamros_node.cpp src/WamNode.cpp)
@@ -37,7 +45,6 @@ rosbuild_add_compile_flags(wamros_node -Wall -pipe)
 
 #These are necessary
 rosbuild_add_compile_flags(wamros_node -DXENOMAI)  #Tells bt headers
-
 
 #Linking----------------------------------
 target_link_libraries(wamros_node btwam pthread m btsystem curses)
